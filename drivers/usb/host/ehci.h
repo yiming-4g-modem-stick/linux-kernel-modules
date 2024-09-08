@@ -684,18 +684,6 @@ static inline unsigned int ehci_readl(const struct ehci_hcd *ehci,
 #endif
 }
 
-#ifdef CONFIG_SOC_IMX28
-static inline void imx28_ehci_writel(const unsigned int val,
-		volatile __u32 __iomem *addr)
-{
-	__asm__ ("swp %0, %0, [%1]" : : "r"(val), "r"(addr));
-}
-#else
-static inline void imx28_ehci_writel(const unsigned int val,
-		volatile __u32 __iomem *addr)
-{
-}
-#endif
 static inline void ehci_writel(const struct ehci_hcd *ehci,
 		const unsigned int val, __u32 __iomem *regs)
 {
@@ -704,10 +692,7 @@ static inline void ehci_writel(const struct ehci_hcd *ehci,
 		writel_be(val, regs) :
 		writel(val, regs);
 #else
-	if (ehci->imx28_write_fix)
-		imx28_ehci_writel(val, regs);
-	else
-		writel(val, regs);
+	writel(val, regs);
 #endif
 }
 
