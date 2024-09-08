@@ -2794,50 +2794,8 @@ static int mmc_blk_issue_rq(struct mmc_queue *mq, struct request *req)
 
 	clear_bit(MMC_QUEUE_NEW_REQUEST, &mq->flags);
 	clear_bit(MMC_QUEUE_URGENT_REQUEST, &mq->flags);
-	if (cmd_flags & REQ_DISCARD) {
-		/* complete ongoing async transfer before issuing discard */
-		if (card->host->areq)
-			mmc_blk_issue_rw_rq(mq, NULL);
-		if (cmd_flags & REQ_SECURE &&
-			!(card->quirks & MMC_QUIRK_SEC_ERASE_TRIM_BROKEN))
-			ret = mmc_blk_issue_secdiscard_rq(mq, req);
-		else
-			ret = mmc_blk_issue_discard_rq(mq, req);
-	} else if (req && req->cmd_flags & REQ_FLUSH) {
-		/* complete ongoing async transfer before issuing flush */
-		if (card->host->areq)
-			mmc_blk_issue_rw_rq(mq, NULL);
-		ret = mmc_blk_issue_flush(mq, req);
-	} else {
-		if (!req && host->areq) {
-			spin_lock_irqsave(&host->context_info.lock, flags);
-			host->context_info.is_waiting_last_req = true;
-			spin_unlock_irqrestore(&host->context_info.lock, flags);
-		}
-		ret = mmc_blk_issue_rw_rq(mq, req);
-	}
 
 out:
-	/*
-	 * packet burst is over, when one of the following occurs:
-	 * - no more requests and new request notification is not in progress
-	 * - urgent notification in progress and current request is not urgent
-	 *   (all existing requests completed or reinserted to the block layer)
-	 */
-	if ((!req && !(test_bit(MMC_QUEUE_NEW_REQUEST, &mq->flags))) ||
-			((test_bit(MMC_QUEUE_URGENT_REQUEST, &mq->flags)) &&
-			 !(cmd_flags & MMC_REQ_NOREINSERT_MASK))) {
-		if (mmc_card_need_bkops(card))
-			mmc_start_bkops(card, false);
-		/*
-		 * Release host when there are no more requests
-		 * and after special request(discard, flush) is done.
-		 * In case sepecial request, there is no reentry to
-		 * the 'mmc_blk_issue_rq' with 'mqrq_prev->req'.
-		 */
-		mmc_release_host(card->host);
-		mmc_rpm_release(host, &card->dev);
-	}
 	return ret;
 }
 
