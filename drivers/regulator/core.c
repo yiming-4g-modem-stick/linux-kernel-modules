@@ -1748,6 +1748,8 @@ static int _regulator_do_disable(struct regulator_dev *rdev)
 
 	trace_regulator_disable_complete(rdev_get_name(rdev));
 
+	_notifier_call_chain(rdev, REGULATOR_EVENT_DISABLE,
+			     NULL);
 	return 0;
 }
 
@@ -1771,8 +1773,6 @@ static int _regulator_disable(struct regulator_dev *rdev)
 				rdev_err(rdev, "failed to disable\n");
 				return ret;
 			}
-			_notifier_call_chain(rdev, REGULATOR_EVENT_DISABLE,
-					NULL);
 		}
 
 		rdev->use_count = 0;
@@ -1827,16 +1827,20 @@ static int _regulator_force_disable(struct regulator_dev *rdev)
 {
 	int ret = 0;
 
-	ret = _regulator_do_disable(rdev);
-	if (ret < 0) {
-		rdev_err(rdev, "failed to force disable\n");
-		return ret;
+	/* force disable */
+	if (rdev->desc->ops->disable) {
+		/* ah well, who wants to live forever... */
+		ret = rdev->desc->ops->disable(rdev);
+		if (ret < 0) {
+			rdev_err(rdev, "failed to force disable\n");
+			return ret;
+		}
+		/* notify other consumers that power has been forced off */
+		_notifier_call_chain(rdev, REGULATOR_EVENT_FORCE_DISABLE |
+			REGULATOR_EVENT_DISABLE, NULL);
 	}
 
-	_notifier_call_chain(rdev, REGULATOR_EVENT_FORCE_DISABLE |
-			REGULATOR_EVENT_DISABLE, NULL);
-
-	return 0;
+	return ret;
 }
 
 /**
@@ -4194,6 +4198,8 @@ int regulator_suspend_finish(void)
 
 	mutex_lock(&regulator_list_mutex);
 	list_for_each_entry(rdev, &regulator_list, list) {
+		struct regulator_ops *ops = rdev->desc->ops;
+
 		mutex_lock(&rdev->mutex);
 		if (rdev->use_count > 0  || rdev->constraints->always_on) {
 			error = _regulator_do_enable(rdev);
@@ -4202,10 +4208,12 @@ int regulator_suspend_finish(void)
 		} else {
 			if (!has_full_constraints)
 				goto unlock;
+			if (!ops->disable)
+				goto unlock;
 			if (!_regulator_is_enabled(rdev))
 				goto unlock;
 
-			error = _regulator_do_disable(rdev);
+			error = ops->disable(rdev);
 			if (error)
 				ret = error;
 		}
@@ -4411,7 +4419,7 @@ static int __init regulator_init_complete(void)
 		ops = rdev->desc->ops;
 		c = rdev->constraints;
 
-		if (c && c->always_on)
+		if (!ops->disable || (c && c->always_on))
 			continue;
 
 		mutex_lock(&rdev->mutex);
