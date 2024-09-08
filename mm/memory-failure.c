@@ -943,10 +943,8 @@ static int hwpoison_user_mappings(struct page *p, unsigned long pfn,
 			 * to it. Similarly, page lock is shifted.
 			 */
 			if (hpage != p) {
-				if (!(flags & MF_COUNT_INCREASED)) {
-					put_page(hpage);
-					get_page(p);
-				}
+				put_page(hpage);
+				get_page(p);
 				lock_page(p);
 				unlock_page(hpage);
 				*hpagep = p;
