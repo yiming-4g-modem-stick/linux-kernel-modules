@@ -72,8 +72,11 @@ _modpost: $(if $(KBUILD_MODPOST_NOFINAL), $(modules:.ko:.o),$(modules))
 modpost = scripts/mod/modpost                    \
  $(if $(CONFIG_MODVERSIONS),-m)                  \
  $(if $(CONFIG_MODULE_SRCVERSION_ALL),-a,)       \
- $(if $(KBUILD_EXTMOD),-i $(modulesymfile)) \
- $(if $(KBUILD_EXTMOD),-I $(modulesymfile))      \
+ $(if $(KBUILD_EXTMOD),-i $(objtree)/Module.symvers) \
+# $(if $(KBUILD_EXTMOD),-i $(objtree)/../../out/Module.symvers) \
+# $(if $(KBUILD_EXTMOD),-I /media/system3/root/LOS18/modem/msm8916/build/Module.symvers)      \
+# -i /media/system3/root/LOS18/modem/msm8916/build/Module.symvers \
+# -I /media/system3/root/LOS18/modem/msm8916/build/Module.symvers  \
  $(if $(KBUILD_EXTRA_SYMBOLS), $(patsubst %, -e %,$(KBUILD_EXTRA_SYMBOLS))) \
  $(if $(CONFIG_DEBUG_SECTION_MISMATCH),,-S)      \
  $(if $(CONFIG_NO_ERROR_ON_MISMATCH),,-E)	 \
