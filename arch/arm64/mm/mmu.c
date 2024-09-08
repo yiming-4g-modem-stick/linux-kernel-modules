@@ -237,7 +237,6 @@ static void __init alloc_init_pmd(pud_t *pud, unsigned long addr,
 				flush_tlb_all();
 		} else {
 			alloc_init_pte(pmd, addr, next, __phys_to_pfn(phys));
-		}
 		phys += next - addr;
 	} while (pmd++, addr = next, addr != end);
 }
