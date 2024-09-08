@@ -134,3 +134,4 @@ module_exit(usb_target_gadget_exit);
 MODULE_AUTHOR("Sebastian Andrzej Siewior <bigeasy@linutronix.de>");
 MODULE_DESCRIPTION("usb-gadget fabric");
 MODULE_LICENSE("GPL v2");
+
