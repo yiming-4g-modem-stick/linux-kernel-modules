@@ -72,10 +72,9 @@ _modpost: $(if $(KBUILD_MODPOST_NOFINAL), $(modules:.ko:.o),$(modules))
 modpost = scripts/mod/modpost                    \
  $(if $(CONFIG_MODVERSIONS),-m)                  \
  $(if $(CONFIG_MODULE_SRCVERSION_ALL),-a,)       \
- $(if $(KBUILD_EXTMOD),-i,-o) $(kernelsymfile)   \
+ $(if $(KBUILD_EXTMOD),-i $(modulesymfile)) \
  $(if $(KBUILD_EXTMOD),-I $(modulesymfile))      \
  $(if $(KBUILD_EXTRA_SYMBOLS), $(patsubst %, -e %,$(KBUILD_EXTRA_SYMBOLS))) \
- $(if $(KBUILD_EXTMOD),-o $(modulesymfile))      \
  $(if $(CONFIG_DEBUG_SECTION_MISMATCH),,-S)      \
  $(if $(CONFIG_NO_ERROR_ON_MISMATCH),,-E)	 \
  $(if $(KBUILD_EXTMOD)$(KBUILD_MODPOST_WARN),-w)
